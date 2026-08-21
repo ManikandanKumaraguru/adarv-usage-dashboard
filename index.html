@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ADARV Log Analysis - Usage Charts</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    background: #f7f8fa; margin: 0; padding: 24px; color: #1f2430;
+  }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.subtitle { color: #666; margin-top: 0; margin-bottom: 24px; }
+  .card {
+    background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    padding: 20px; margin-bottom: 24px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 4px 0; color: #2F5496; }
+  .card p.note { font-size: 12.5px; color: #777; margin: 0 0 14px 0; }
+  .chart-wrap { position: relative; height: 340px; }
+  .empty { color: #999; font-style: italic; padding: 40px; text-align: center; }
+  table.compare { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+  table.compare th, table.compare td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; }
+  table.compare th { color: #666; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  table.compare td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .up { color: #2A9D8F; font-weight: 600; }
+  .down { color: #E76F51; font-weight: 600; }
+  .flat { color: #999; }
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px; margin-top: 10px;
+  }
+  .kpi-tile {
+    border: 1px solid #eee; border-radius: 8px; padding: 14px 14px 8px 14px;
+    text-align: center;
+  }
+  .kpi-tile .kpi-label {
+    font-size: 12px; color: #666; font-weight: 600; margin-bottom: 8px;
+    min-height: 30px;
+  }
+  .kpi-tile .kpi-values { font-size: 20px; font-weight: 700; color: #1f2430; }
+  .kpi-tile .kpi-values .arrow { color: #bbb; font-weight: 400; font-size: 15px; margin: 0 4px; }
+  .kpi-tile .kpi-change { font-size: 13px; margin: 4px 0 8px 0; }
+  .kpi-tile .chart-wrap { height: 60px; margin-top: 4px; }
+  .kpi-legend { font-size: 12.5px; color: #777; margin-top: 14px; }
+  .kpi-legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<h1>ADARV Usage Analysis</h1>
+<p class="subtitle">Weeks run Friday &rarr; Thursday, including weeks with zero activity (shown as real gaps, not skipped).
+Generated: 2026-08-21 11:48:25</p>
+
+
+<div class="card">
+  <h2>Weekly Logins: Total vs. New vs. Repeated Users</h2>
+  <p class="note">Total login events (filled area, left axis) alongside how many of that week's
+  users were brand-new vs. already-seen-before (lines, right axis).</p>
+  <div class="chart-wrap"><canvas id="usersChart"></canvas></div>
+</div>
+
+<div class="card">
+  <h2>Weekly Contribution &amp; Dataset Activity</h2>
+  <p class="note">Contribute-page visits (filled area, left axis) alongside individual dataset
+  edit/view actions and how many distinct outbreak datasets were touched (lines, right axis).</p>
+  <div class="chart-wrap"><canvas id="contribChart"></canvas></div>
+</div>
+
+
+<div class="card">
+  <h2>Previous 7 Days vs. Last 7 Days</h2>
+  <p class="note">Each tile is one metric: the big numbers are the actual before/after values,
+  the small trend line just shows the direction, and the % underneath is the plain change.</p>
+  <div class="kpi-grid">
+    
+    <div class="kpi-tile">
+      <div class="kpi-label">Unique Users</div>
+      <div class="kpi-values">1<span class="arrow">&rarr;</span>4</div>
+      <div class="kpi-change"><span class="up">▲ 300%</span></div>
+      <div class="chart-wrap"><canvas id="kpi_spark_0"></canvas></div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">New Users</div>
+      <div class="kpi-values">0<span class="arrow">&rarr;</span>3</div>
+      <div class="kpi-change"><span class="up">&#9650; new activity (+3)</span></div>
+      <div class="chart-wrap"><canvas id="kpi_spark_1"></canvas></div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Total Logins</div>
+      <div class="kpi-values">7<span class="arrow">&rarr;</span>79</div>
+      <div class="kpi-change"><span class="up">▲ 1029%</span></div>
+      <div class="chart-wrap"><canvas id="kpi_spark_2"></canvas></div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Contribute-Page Visits</div>
+      <div class="kpi-values">3<span class="arrow">&rarr;</span>20</div>
+      <div class="kpi-change"><span class="up">▲ 567%</span></div>
+      <div class="chart-wrap"><canvas id="kpi_spark_3"></canvas></div>
+    </div>
+    <div class="kpi-tile">
+      <div class="kpi-label">Dataset Touch Events</div>
+      <div class="kpi-values">0<span class="arrow">&rarr;</span>22</div>
+      <div class="kpi-change"><span class="up">&#9650; new activity (+22)</span></div>
+      <div class="chart-wrap"><canvas id="kpi_spark_4"></canvas></div>
+    </div>
+  </div>
+  
+<table class="compare">
+  <tr><th>Metric</th><th>Previous 7 Days</th><th>Last 7 Days</th><th>Change</th></tr>
+  <tr><td>Unique Users</td><td class='num'>1</td><td class='num'>4</td><td class='num'><span class="up">▲ 300%</span></td></tr><tr><td>New Users</td><td class='num'>0</td><td class='num'>3</td><td class='num'><span class="up">&#9650; new activity (+3)</span></td></tr><tr><td>Total Logins</td><td class='num'>7</td><td class='num'>79</td><td class='num'><span class="up">▲ 1029%</span></td></tr><tr><td>Contribute-Page Visits</td><td class='num'>3</td><td class='num'>20</td><td class='num'><span class="up">▲ 567%</span></td></tr><tr><td>Dataset Touch Events</td><td class='num'>0</td><td class='num'>22</td><td class='num'><span class="up">&#9650; new activity (+22)</span></td></tr>
+</table>
+
+</div>
+
+<script>
+const palette = {
+  blue: "#2F5496", teal: "#2A9D8F", orange: "#E76F51",
+  purple: "#8E44AD", grey: "#95A5A6"
+};
+
+
+const weeks = ["05-Jun-2026 to 11-Jun-2026 (Fri-Thu)", "12-Jun-2026 to 18-Jun-2026 (Fri-Thu)", "19-Jun-2026 to 25-Jun-2026 (Fri-Thu)", "26-Jun-2026 to 02-Jul-2026 (Fri-Thu)", "03-Jul-2026 to 09-Jul-2026 (Fri-Thu)", "10-Jul-2026 to 16-Jul-2026 (Fri-Thu)", "17-Jul-2026 to 23-Jul-2026 (Fri-Thu)", "24-Jul-2026 to 30-Jul-2026 (Fri-Thu)", "31-Jul-2026 to 06-Aug-2026 (Fri-Thu)", "07-Aug-2026 to 13-Aug-2026 (Fri-Thu)", "14-Aug-2026 to 20-Aug-2026 (Fri-Thu)", "21-Aug-2026 to 27-Aug-2026 (Fri-Thu)"];
+
+new Chart(document.getElementById('usersChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      { label: 'Total Logins (all events)', data: [188, 93, 46, 36, 72, 33, 64, 23, 26, 7, 60, 19],
+         borderColor: palette.blue, backgroundColor: 'rgba(47,84,150,0.15)',
+         fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
+         pointBorderColor: palette.blue, pointBorderWidth: 2, borderWidth: 2.5,
+         yAxisID: 'yLogins' },
+      { label: 'New Users (first-ever login)', data: [23, 5, 5, 1, 1, 1, 0, 0, 2, 0, 3, 0],
+         borderColor: palette.teal, backgroundColor: 'rgba(42,157,143,0.08)',
+         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
+         pointBorderColor: palette.teal, pointBorderWidth: 2, borderWidth: 2.5,
+         yAxisID: 'yUsers' },
+      { label: 'Repeated-Login Users', data: [0, 3, 2, 1, 2, 2, 3, 2, 0, 1, 1, 1],
+         borderColor: palette.orange, backgroundColor: 'rgba(231,111,81,0.08)',
+         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
+         pointBorderColor: palette.orange, pointBorderWidth: 2, borderWidth: 2.5,
+         yAxisID: 'yUsers' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { title: { display: true, text: 'Week (Fri-Thu)' } },
+      yLogins: { beginAtZero: true, position: 'left',
+                  title: { display: true, text: 'Total login events' } },
+      yUsers: { beginAtZero: true, position: 'right',
+                 grid: { drawOnChartArea: false },
+                 title: { display: true, text: 'Number of users' } }
+    },
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+new Chart(document.getElementById('contribChart'), {
+  type: 'line',
+  data: {
+    labels: weeks,
+    datasets: [
+      { label: 'Contribute-Page Visits', data: [52, 24, 10, 12, 11, 9, 16, 5, 8, 3, 17, 3],
+         borderColor: palette.orange, backgroundColor: 'rgba(231,111,81,0.15)',
+         fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
+         pointBorderColor: palette.orange, pointBorderWidth: 2, borderWidth: 2.5,
+         yAxisID: 'yActivity' },
+      { label: 'Dataset Touch Events (edit + view)', data: [14, 15, 2, 3, 5, 8, 22, 8, 6, 0, 15, 7],
+         borderColor: palette.purple, backgroundColor: 'rgba(142,68,173,0.08)',
+         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
+         pointBorderColor: palette.purple, pointBorderWidth: 2, borderWidth: 2.5,
+         yAxisID: 'yActivity' },
+      { label: 'Distinct Datasets Touched', data: [11, 7, 2, 3, 4, 2, 6, 3, 1, 0, 3, 2],
+         borderColor: palette.blue, backgroundColor: 'rgba(47,84,150,0.08)',
+         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
+         pointBorderColor: palette.blue, pointBorderWidth: 2, borderWidth: 2.5,
+         yAxisID: 'yDatasets' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { title: { display: true, text: 'Week (Fri-Thu)' } },
+      yActivity: { beginAtZero: true, position: 'left',
+                    title: { display: true, text: 'Visits / touch events' } },
+      yDatasets: { beginAtZero: true, position: 'right',
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Distinct datasets' } }
+    },
+    plugins: { legend: { position: 'bottom' } }
+  }
+});
+
+new Chart(document.getElementById('kpi_spark_0'), {
+  type: 'line',
+  data: {
+    labels: ['Previous 7 Days', 'Last 7 Days'],
+    datasets: [{ data: [1, 4], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
+      pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    scales: {
+      x: { display: false },
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(1, 4, 1) * 1.2 }
+    }
+  }
+});
+new Chart(document.getElementById('kpi_spark_1'), {
+  type: 'line',
+  data: {
+    labels: ['Previous 7 Days', 'Last 7 Days'],
+    datasets: [{ data: [0, 3], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
+      pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    scales: {
+      x: { display: false },
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(0, 3, 1) * 1.2 }
+    }
+  }
+});
+new Chart(document.getElementById('kpi_spark_2'), {
+  type: 'line',
+  data: {
+    labels: ['Previous 7 Days', 'Last 7 Days'],
+    datasets: [{ data: [7, 79], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
+      pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    scales: {
+      x: { display: false },
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(7, 79, 1) * 1.2 }
+    }
+  }
+});
+new Chart(document.getElementById('kpi_spark_3'), {
+  type: 'line',
+  data: {
+    labels: ['Previous 7 Days', 'Last 7 Days'],
+    datasets: [{ data: [3, 20], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
+      pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    scales: {
+      x: { display: false },
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(3, 20, 1) * 1.2 }
+    }
+  }
+});
+new Chart(document.getElementById('kpi_spark_4'), {
+  type: 'line',
+  data: {
+    labels: ['Previous 7 Days', 'Last 7 Days'],
+    datasets: [{ data: [0, 22], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
+      pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+    scales: {
+      x: { display: false },
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(0, 22, 1) * 1.2 }
+    }
+  }
+});
+</script>
+
+</body>
+</html>
