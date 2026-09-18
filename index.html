@@ -51,7 +51,7 @@
 
 <h1>ADARV Usage Analysis</h1>
 <p class="subtitle">Weeks run Friday &rarr; Thursday, including weeks with zero activity (shown as real gaps, not skipped).
-Generated: 2026-09-17 18:12:53</p>
+Generated: 2026-09-18 11:05:57</p>
 
 
 <div class="card">
@@ -77,8 +77,8 @@ Generated: 2026-09-17 18:12:53</p>
     
     <div class="kpi-tile">
       <div class="kpi-label">Unique Users</div>
-      <div class="kpi-values">5<span class="arrow">&rarr;</span>9</div>
-      <div class="kpi-change"><span class="up">▲ 80%</span></div>
+      <div class="kpi-values">4<span class="arrow">&rarr;</span>6</div>
+      <div class="kpi-change"><span class="up">▲ 50%</span></div>
       <div class="chart-wrap"><canvas id="kpi_spark_0"></canvas></div>
     </div>
     <div class="kpi-tile">
@@ -89,27 +89,27 @@ Generated: 2026-09-17 18:12:53</p>
     </div>
     <div class="kpi-tile">
       <div class="kpi-label">Total Logins</div>
-      <div class="kpi-values">38<span class="arrow">&rarr;</span>142</div>
-      <div class="kpi-change"><span class="up">▲ 274%</span></div>
+      <div class="kpi-values">35<span class="arrow">&rarr;</span>48</div>
+      <div class="kpi-change"><span class="up">▲ 37%</span></div>
       <div class="chart-wrap"><canvas id="kpi_spark_2"></canvas></div>
     </div>
     <div class="kpi-tile">
       <div class="kpi-label">Contribute-Page Visits</div>
-      <div class="kpi-values">10<span class="arrow">&rarr;</span>25</div>
-      <div class="kpi-change"><span class="up">▲ 150%</span></div>
+      <div class="kpi-values">9<span class="arrow">&rarr;</span>9</div>
+      <div class="kpi-change"><span class="flat">no change</span></div>
       <div class="chart-wrap"><canvas id="kpi_spark_3"></canvas></div>
     </div>
     <div class="kpi-tile">
       <div class="kpi-label">Dataset Touch Events</div>
-      <div class="kpi-values">0<span class="arrow">&rarr;</span>65</div>
-      <div class="kpi-change"><span class="up">&#9650; new activity (+65)</span></div>
+      <div class="kpi-values">0<span class="arrow">&rarr;</span>17</div>
+      <div class="kpi-change"><span class="up">&#9650; new activity (+17)</span></div>
       <div class="chart-wrap"><canvas id="kpi_spark_4"></canvas></div>
     </div>
   </div>
   
 <table class="compare">
   <tr><th>Metric</th><th>Previous 7 Days</th><th>Last 7 Days</th><th>Change</th></tr>
-  <tr><td>Unique Users</td><td class='num'>5</td><td class='num'>9</td><td class='num'><span class="up">▲ 80%</span></td></tr><tr><td>New Users</td><td class='num'>1</td><td class='num'>4</td><td class='num'><span class="up">▲ 300%</span></td></tr><tr><td>Total Logins</td><td class='num'>38</td><td class='num'>142</td><td class='num'><span class="up">▲ 274%</span></td></tr><tr><td>Contribute-Page Visits</td><td class='num'>10</td><td class='num'>25</td><td class='num'><span class="up">▲ 150%</span></td></tr><tr><td>Dataset Touch Events</td><td class='num'>0</td><td class='num'>65</td><td class='num'><span class="up">&#9650; new activity (+65)</span></td></tr>
+  <tr><td>Unique Users</td><td class='num'>4</td><td class='num'>6</td><td class='num'><span class="up">▲ 50%</span></td></tr><tr><td>New Users</td><td class='num'>1</td><td class='num'>4</td><td class='num'><span class="up">▲ 300%</span></td></tr><tr><td>Total Logins</td><td class='num'>35</td><td class='num'>48</td><td class='num'><span class="up">▲ 37%</span></td></tr><tr><td>Contribute-Page Visits</td><td class='num'>9</td><td class='num'>9</td><td class='num'><span class="flat">no change</span></td></tr><tr><td>Dataset Touch Events</td><td class='num'>0</td><td class='num'>17</td><td class='num'><span class="up">&#9650; new activity (+17)</span></td></tr>
 </table>
 
 </div>
@@ -128,17 +128,17 @@ new Chart(document.getElementById('usersChart'), {
   data: {
     labels: weeks,
     datasets: [
-      { label: 'Total Logins (all events)', data: [188, 93, 46, 36, 72, 33, 64, 23, 26, 7, 60, 40, 10, 38, 142],
+      { label: 'Total Logins (all events)', data: [173, 93, 22, 36, 59, 25, 35, 6, 26, 0, 13, 40, 8, 35, 48],
          borderColor: palette.blue, backgroundColor: 'rgba(47,84,150,0.15)',
          fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
          pointBorderColor: palette.blue, pointBorderWidth: 2, borderWidth: 2.5,
          yAxisID: 'yLogins' },
-      { label: 'New Users (first-ever login)', data: [23, 5, 5, 1, 1, 1, 0, 0, 2, 0, 3, 1, 0, 1, 4],
+      { label: 'New Users (first-ever login)', data: [21, 5, 4, 1, 1, 1, 0, 0, 2, 0, 3, 1, 0, 1, 4],
          borderColor: palette.teal, backgroundColor: 'rgba(42,157,143,0.08)',
          fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
          pointBorderColor: palette.teal, pointBorderWidth: 2, borderWidth: 2.5,
          yAxisID: 'yUsers' },
-      { label: 'Repeated-Login Users', data: [0, 3, 2, 1, 2, 2, 3, 2, 0, 1, 1, 1, 2, 4, 5],
+      { label: 'Repeated-Login Users', data: [0, 3, 1, 1, 1, 1, 2, 1, 0, 0, 0, 1, 1, 3, 2],
          borderColor: palette.orange, backgroundColor: 'rgba(231,111,81,0.08)',
          fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
          pointBorderColor: palette.orange, pointBorderWidth: 2, borderWidth: 2.5,
@@ -165,17 +165,17 @@ new Chart(document.getElementById('contribChart'), {
   data: {
     labels: weeks,
     datasets: [
-      { label: 'Contribute-Page Visits', data: [52, 24, 10, 12, 11, 9, 16, 5, 8, 3, 17, 7, 1, 10, 25],
+      { label: 'Contribute-Page Visits', data: [45, 24, 6, 12, 9, 7, 12, 1, 8, 0, 5, 7, 1, 9, 9],
          borderColor: palette.orange, backgroundColor: 'rgba(231,111,81,0.15)',
          fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
          pointBorderColor: palette.orange, pointBorderWidth: 2, borderWidth: 2.5,
          yAxisID: 'yActivity' },
-      { label: 'Dataset Touch Events (edit + view)', data: [14, 15, 2, 3, 5, 8, 22, 8, 6, 0, 15, 9, 5, 0, 65],
+      { label: 'Dataset Touch Events (edit + view)', data: [12, 15, 0, 3, 3, 5, 7, 3, 6, 0, 0, 9, 1, 0, 17],
          borderColor: palette.purple, backgroundColor: 'rgba(142,68,173,0.08)',
          fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
          pointBorderColor: palette.purple, pointBorderWidth: 2, borderWidth: 2.5,
          yAxisID: 'yActivity' },
-      { label: 'Distinct Datasets Touched', data: [11, 7, 2, 3, 4, 2, 6, 3, 1, 0, 3, 3, 1, 0, 15],
+      { label: 'Distinct Datasets Touched', data: [9, 7, 0, 3, 2, 1, 3, 1, 1, 0, 0, 3, 1, 0, 5],
          borderColor: palette.blue, backgroundColor: 'rgba(47,84,150,0.08)',
          fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
          pointBorderColor: palette.blue, pointBorderWidth: 2, borderWidth: 2.5,
@@ -201,7 +201,7 @@ new Chart(document.getElementById('kpi_spark_0'), {
   type: 'line',
   data: {
     labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [5, 9], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+    datasets: [{ data: [4, 6], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
       fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
       pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
   },
@@ -210,7 +210,7 @@ new Chart(document.getElementById('kpi_spark_0'), {
     plugins: { legend: { display: false }, tooltip: { enabled: true } },
     scales: {
       x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(5, 9, 1) * 1.2 }
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(4, 6, 1) * 1.2 }
     }
   }
 });
@@ -235,7 +235,7 @@ new Chart(document.getElementById('kpi_spark_2'), {
   type: 'line',
   data: {
     labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [38, 142], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+    datasets: [{ data: [35, 48], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
       fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
       pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
   },
@@ -244,7 +244,7 @@ new Chart(document.getElementById('kpi_spark_2'), {
     plugins: { legend: { display: false }, tooltip: { enabled: true } },
     scales: {
       x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(38, 142, 1) * 1.2 }
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(35, 48, 1) * 1.2 }
     }
   }
 });
@@ -252,7 +252,7 @@ new Chart(document.getElementById('kpi_spark_3'), {
   type: 'line',
   data: {
     labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [10, 25], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+    datasets: [{ data: [9, 9], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
       fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
       pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
   },
@@ -261,7 +261,7 @@ new Chart(document.getElementById('kpi_spark_3'), {
     plugins: { legend: { display: false }, tooltip: { enabled: true } },
     scales: {
       x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(10, 25, 1) * 1.2 }
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(9, 9, 1) * 1.2 }
     }
   }
 });
@@ -269,7 +269,7 @@ new Chart(document.getElementById('kpi_spark_4'), {
   type: 'line',
   data: {
     labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [0, 65], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
+    datasets: [{ data: [0, 17], borderColor: '#2A9D8F', backgroundColor: '#2A9D8F',
       fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
       pointBorderColor: '#2A9D8F', pointBorderWidth: 2, borderWidth: 2.5 }]
   },
@@ -278,7 +278,7 @@ new Chart(document.getElementById('kpi_spark_4'), {
     plugins: { legend: { display: false }, tooltip: { enabled: true } },
     scales: {
       x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(0, 65, 1) * 1.2 }
+      y: { display: false, beginAtZero: true, suggestedMax: Math.max(0, 17, 1) * 1.2 }
     }
   }
 });
