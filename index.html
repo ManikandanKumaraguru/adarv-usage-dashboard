@@ -1,288 +1,539 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ADARV Log Analysis - Usage Charts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADARV Analytics</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  body {
-    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
-    background: #f7f8fa; margin: 0; padding: 24px; color: #1f2430;
+  :root{
+    --bg:#f6f7fb; --panel:#fff; --line:#e6e8ee; --ink:#12141c; --mute:#6b7180; --faint:#9aa0ae;
+    --new:#4f46e5; --ret:#06b6d4; --work:#7c3aed; --views:#c7d2fe;
+    --spike:#f59e0b; --drop:#e11d48; --up:#16a34a; --down:#dc2626;
   }
-  h1 { font-size: 20px; margin-bottom: 4px; }
-  p.subtitle { color: #666; margin-top: 0; margin-bottom: 24px; }
-  .card {
-    background: #fff; border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    padding: 20px; margin-bottom: 24px;
-  }
-  .card h2 { font-size: 15px; margin: 0 0 4px 0; color: #2F5496; }
-  .card p.note { font-size: 12.5px; color: #777; margin: 0 0 14px 0; }
-  .chart-wrap { position: relative; height: 340px; }
-  .empty { color: #999; font-style: italic; padding: 40px; text-align: center; }
-  table.compare { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
-  table.compare th, table.compare td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; }
-  table.compare th { color: #666; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
-  table.compare td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .up { color: #2A9D8F; font-weight: 600; }
-  .down { color: #E76F51; font-weight: 600; }
-  .flat { color: #999; }
-  .kpi-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 14px; margin-top: 10px;
-  }
-  .kpi-tile {
-    border: 1px solid #eee; border-radius: 8px; padding: 14px 14px 8px 14px;
-    text-align: center;
-  }
-  .kpi-tile .kpi-label {
-    font-size: 12px; color: #666; font-weight: 600; margin-bottom: 8px;
-    min-height: 30px;
-  }
-  .kpi-tile .kpi-values { font-size: 20px; font-weight: 700; color: #1f2430; }
-  .kpi-tile .kpi-values .arrow { color: #bbb; font-weight: 400; font-size: 15px; margin: 0 4px; }
-  .kpi-tile .kpi-change { font-size: 13px; margin: 4px 0 8px 0; }
-  .kpi-tile .chart-wrap { height: 60px; margin-top: 4px; }
-  .kpi-legend { font-size: 12.5px; color: #777; margin-top: 14px; }
-  .kpi-legend span { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-size:13.5px;
+        font-family:-apple-system,"Segoe UI",Inter,Roboto,Arial,sans-serif; }
+  .num{ font-variant-numeric:tabular-nums; }
+
+  .bar{ background:#0d1020; color:#fff; display:flex; align-items:center; gap:24px;
+        padding:0 22px; height:50px; position:sticky; top:0; z-index:30; }
+  .brand{ font-weight:700; font-size:15.5px; letter-spacing:.2px; }
+  .brand b{ color:#8b93ff; }
+  .bar nav{ display:flex; height:100%; margin-left:6px; }
+  .bar nav a{ color:#a6acc4; padding:0 14px; display:flex; align-items:center; cursor:pointer;
+              border-bottom:2px solid transparent; font-size:13px; }
+  .bar nav a:hover{ color:#fff; }
+  .bar nav a.on{ color:#fff; border-bottom-color:#8b93ff; font-weight:600; }
+  .bar .rng{ margin-left:auto; font-size:11.5px; color:#7e849c; }
+
+  .toolbar{ background:#fff; border-bottom:1px solid var(--line); padding:8px 22px;
+            display:flex; flex-wrap:wrap; gap:8px 20px; align-items:center; position:sticky; top:50px; z-index:20; }
+  .toolbar .lbl{ color:var(--mute); font-size:12px; margin-right:6px; }
+  .seg{ display:inline-flex; border:1px solid #d7dae2; border-radius:6px; overflow:hidden; }
+  .seg button{ font:inherit; font-size:12.5px; background:#fff; border:0; padding:4px 12px; cursor:pointer;
+               color:var(--ink); border-right:1px solid #d7dae2; }
+  .seg button:last-child{ border-right:0; }
+  .seg button.on{ background:var(--new); color:#fff; }
+  select{ font:inherit; font-size:12.5px; padding:4px 7px; border:1px solid #d7dae2; border-radius:6px; background:#fff; }
+  .toolbar .legend{ margin-left:auto; display:flex; gap:14px; font-size:11.5px; color:var(--mute); }
+  .toolbar .legend i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:1px; }
+
+  main{ max-width:1220px; margin:0 auto; padding:18px 22px 50px; }
+  .tabpage{ display:none; } .tabpage.on{ display:block; }
+  .stripline{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); margin:22px 0 8px; }
+  .stripline:first-child{ margin-top:0; }
+
+  .kgrid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); margin-bottom:6px; }
+  .kpi{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .kpi .kt{ display:flex; justify-content:space-between; align-items:baseline; }
+  .kpi .kl{ color:var(--mute); font-size:11.5px; }
+  .kpi .badge{ font-size:11px; font-weight:700; border-radius:5px; padding:1px 6px; }
+  .badge.up{ color:var(--up); background:#ecfdf3; } .badge.down{ color:var(--down); background:#fef2f2; }
+  .badge.flat{ color:var(--mute); background:#f1f2f6; }
+  .kpi .kv{ font-size:26px; font-weight:800; line-height:1.15; margin:1px 0 2px; }
+  .spark{ width:100%; height:26px; display:block; margin:2px 0 6px; }
+  .cbar{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--mute); margin-top:2px; }
+  .cbar .cl{ width:28px; flex-shrink:0; }
+  .cbar .track{ flex:1; background:#eef0f5; border-radius:4px; height:7px; overflow:hidden; }
+  .cbar .track i{ display:block; height:100%; border-radius:4px; }
+  .cbar .cv{ width:30px; text-align:right; flex-shrink:0; }
+  .kpi.mini .kv{ font-size:20px; }
+
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; }
+  .ptop{ display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:2px; flex-wrap:wrap; }
+  .ptitle{ font-size:13.5px; font-weight:700; }
+  .pcap{ color:var(--faint); font-size:11px; margin:1px 0 10px; }
+  .chips{ display:flex; gap:12px; flex-wrap:wrap; font-size:11.5px; }
+  .chip{ display:flex; align-items:center; gap:5px; color:var(--mute); }
+  .chip i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .chip b{ color:var(--ink); }
+  .chart{ position:relative; height:260px; }
+  .chart.tall{ height:320px; }
+  .chart.short{ height:180px; }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  @media(max-width:860px){ .grid2,.grid3{ grid-template-columns:1fr; } }
+
+  table{ border-collapse:collapse; width:100%; }
+  th,td{ padding:6px 9px; border-bottom:1px solid var(--line); text-align:left; }
+  thead th{ background:#fafbfd; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--mute); font-weight:700; white-space:nowrap; }
+  th.sortable{ cursor:pointer; user-select:none; } th.sortable:hover{ color:var(--new); }
+  td.n,th.n{ text-align:right; }
+  tbody tr:hover{ background:#fafbfd; }
+  .tag{ font-size:10.5px; padding:1px 7px; border-radius:9px; background:#eef0f5; color:#3a3f4c; }
+  .tag.ret{ background:#eef0ff; color:#3730a3; }
+  .scroll{ overflow-x:auto; }
+  .tools{ display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  input[type=search]{ font:inherit; font-size:12.5px; padding:5px 9px; border:1px solid #d7dae2; border-radius:6px; width:220px; }
+  .btn{ font:inherit; font-size:11.5px; padding:4px 10px; background:#fff; border:1px solid #d7dae2; border-radius:6px; cursor:pointer; }
+  .btn:hover{ border-color:var(--new); color:var(--new); }
+  .empty{ color:var(--faint); font-style:italic; padding:14px 0; font-size:12px; }
+
+  .heat{ border-collapse:separate; border-spacing:3px; }
+  .heat td{ border:0; text-align:center; font-size:11px; border-radius:4px; padding:5px 7px; font-variant-numeric:tabular-nums; }
+  .heat th{ border:0; background:none; }
+
+  footer{ text-align:center; color:var(--faint); font-size:10.5px; padding:10px 0 24px; }
+  @media(max-width:700px){ .bar{ gap:10px; padding:0 10px; overflow-x:auto; } .bar .rng{ display:none; }
+    .toolbar,main{ padding-left:12px; padding-right:12px; } .toolbar .legend{ display:none; } }
 </style>
 </head>
 <body>
 
-<h1>ADARV Usage Analysis</h1>
-<p class="subtitle">Weeks run Friday &rarr; Thursday, including weeks with zero activity (shown as real gaps, not skipped).
-Generated: 2026-10-21 10:40:44</p>
+<header class="bar">
+  <div class="brand">ADARV <b>Analytics</b></div>
+  <nav id="tabs">
+    <a data-tab="overview" class="on">Overview</a>
+    <a data-tab="trends">Trends</a>
+    <a data-tab="datasets">Datasets</a>
+    <a data-tab="people">People</a>
+  </nav>
+  <div class="rng">05 Jun 2026 to 27 Sep 2026</div>
+</header>
 
-
-<div class="card">
-  <h2>Weekly Logins: Total vs. New vs. Repeated Users</h2>
-  <p class="note">Total login events (filled area, left axis) alongside how many of that week's
-  users were brand-new vs. already-seen-before (lines, right axis).</p>
-  <div class="chart-wrap"><canvas id="usersChart"></canvas></div>
+<div class="toolbar" id="toolbar">
+  <span class="lbl">Group</span>
+  <div class="seg" id="segView"><button data-v="week" class="on">Week</button><button data-v="month">Month</button></div>
+  <span class="lbl">Show</span>
+  <select id="selLimit">
+    <option value="0">All</option><option value="6">Last 6</option>
+    <option value="10" selected>Last 10</option><option value="16">Last 16</option>
+  </select>
+  <div class="legend">
+    <span><i style="background:var(--new)"></i>New</span>
+    <span><i style="background:var(--ret)"></i>Returning</span>
+    <span><i style="background:var(--spike)"></i>Spike</span>
+    <span><i style="background:var(--drop)"></i>Drop</span>
+  </div>
 </div>
 
-<div class="card">
-  <h2>Weekly Contribution &amp; Dataset Activity</h2>
-  <p class="note">Contribute-page visits (filled area, left axis) alongside individual dataset
-  edit/view actions and how many distinct outbreak datasets were touched (lines, right axis).</p>
-  <div class="chart-wrap"><canvas id="contribChart"></canvas></div>
-</div>
+<main>
 
+<!-- ============ OVERVIEW ============ -->
+<section class="tabpage on" id="tab-overview">
+  <p class="stripline">All time</p>
+  <div class="kgrid" id="allTimeKpis"></div>
 
-<div class="card">
-  <h2>Previous 7 Days vs. Last 7 Days</h2>
-  <p class="note">Each tile is one metric: the big numbers are the actual before/after values,
-  the small trend line just shows the direction, and the % underneath is the plain change.</p>
-  <div class="kpi-grid">
-    
-    <div class="kpi-tile">
-      <div class="kpi-label">Unique Users</div>
-      <div class="kpi-values">7<span class="arrow">&rarr;</span>6</div>
-      <div class="kpi-change"><span class="down">▼ 14%</span></div>
-      <div class="chart-wrap"><canvas id="kpi_spark_0"></canvas></div>
+  <p class="stripline" id="latestLabel">Latest period vs. previous</p>
+  <div class="kgrid" id="latestKpis"></div>
+
+  <div class="panel">
+    <div class="ptop">
+      <div><div class="ptitle">Users &amp; logins per <span class="uw">week</span></div>
+        <div class="pcap">Stacked bars = users (new / returning). Line = total logins, with outlier flags.</div></div>
+      <div class="chips">
+        <span class="chip"><i style="background:var(--new)"></i>New users</span>
+        <span class="chip"><i style="background:var(--ret)"></i>Returning users</span>
+        <span class="chip"><i style="background:var(--ink)"></i>Logins (right axis)</span>
+      </div>
     </div>
-    <div class="kpi-tile">
-      <div class="kpi-label">New Users</div>
-      <div class="kpi-values">6<span class="arrow">&rarr;</span>4</div>
-      <div class="kpi-change"><span class="down">▼ 33%</span></div>
-      <div class="chart-wrap"><canvas id="kpi_spark_1"></canvas></div>
+    <div class="chart tall"><canvas id="ovChart"></canvas></div>
+  </div>
+</section>
+
+<!-- ============ TRENDS ============ -->
+<section class="tabpage" id="tab-trends">
+  <p class="stripline">Small multiples &mdash; each metric, one <span class="uw">week</span> at a time, with outliers flagged</p>
+  <div class="grid2" id="trendGrid"></div>
+
+  <div class="panel">
+    <div class="tools"><span class="ptitle" style="margin:0">Full numbers</span>
+      <button class="btn" id="csvPeriods" style="margin-left:auto">CSV</button></div>
+    <div class="scroll"><table id="periodTable"></table></div>
+  </div>
+</section>
+
+<!-- ============ DATASETS ============ -->
+<section class="tabpage" id="tab-datasets">
+  <p class="stripline">Dataset activity</p>
+  <div class="kgrid" id="dsKpis"></div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="ptop"><div><div class="ptitle">New vs. re-touched per <span class="uw">week</span></div>
+        <div class="pcap">New = first ever touch. Re-touched = a dataset seen before, visited again.</div></div>
+        <div class="chips"><span class="chip"><i style="background:var(--new)"></i>New</span>
+          <span class="chip"><i style="background:var(--ret)"></i>Re-touched</span></div></div>
+      <div class="chart"><canvas id="dsNewChart"></canvas></div>
     </div>
-    <div class="kpi-tile">
-      <div class="kpi-label">Total Logins</div>
-      <div class="kpi-values">57<span class="arrow">&rarr;</span>41</div>
-      <div class="kpi-change"><span class="down">▼ 28%</span></div>
-      <div class="chart-wrap"><canvas id="kpi_spark_2"></canvas></div>
-    </div>
-    <div class="kpi-tile">
-      <div class="kpi-label">Contribute-Page Visits</div>
-      <div class="kpi-values">15<span class="arrow">&rarr;</span>14</div>
-      <div class="kpi-change"><span class="down">▼ 7%</span></div>
-      <div class="chart-wrap"><canvas id="kpi_spark_3"></canvas></div>
-    </div>
-    <div class="kpi-tile">
-      <div class="kpi-label">Dataset Touch Events</div>
-      <div class="kpi-values">15<span class="arrow">&rarr;</span>10</div>
-      <div class="kpi-change"><span class="down">▼ 33%</span></div>
-      <div class="chart-wrap"><canvas id="kpi_spark_4"></canvas></div>
+    <div class="panel">
+      <div class="ptop"><div><div class="ptitle">Cumulative datasets discovered</div>
+        <div class="pcap">Full history. Only rises &ndash; each step is a dataset seen for the first time.</div></div></div>
+      <div class="chart"><canvas id="dsCumChart"></canvas></div>
     </div>
   </div>
-  
-<table class="compare">
-  <tr><th>Metric</th><th>Previous 7 Days</th><th>Last 7 Days</th><th>Change</th></tr>
-  <tr><td>Unique Users</td><td class='num'>7</td><td class='num'>6</td><td class='num'><span class="down">▼ 14%</span></td></tr><tr><td>New Users</td><td class='num'>6</td><td class='num'>4</td><td class='num'><span class="down">▼ 33%</span></td></tr><tr><td>Total Logins</td><td class='num'>57</td><td class='num'>41</td><td class='num'><span class="down">▼ 28%</span></td></tr><tr><td>Contribute-Page Visits</td><td class='num'>15</td><td class='num'>14</td><td class='num'><span class="down">▼ 7%</span></td></tr><tr><td>Dataset Touch Events</td><td class='num'>15</td><td class='num'>10</td><td class='num'><span class="down">▼ 33%</span></td></tr>
-</table>
 
-</div>
+  <div class="panel">
+    <div class="ptop"><div><div class="ptitle">Top 10 datasets by activity</div>
+      <div class="pcap">Edits vs. views, ranked.</div></div>
+      <div class="chips"><span class="chip"><i style="background:var(--work)"></i>Edits</span>
+        <span class="chip"><i style="background:var(--views)"></i>Views</span></div></div>
+    <div class="chart short"><canvas id="dsTopChart"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <div class="tools"><span class="ptitle" style="margin:0">All datasets</span>
+      <input type="search" id="dsq" placeholder="Search dataset ID">
+      <button class="btn" id="csvDatasets" style="margin-left:auto">CSV</button></div>
+    <div class="scroll"><table id="datasetTable"></table></div>
+  </div>
+</section>
+
+<!-- ============ PEOPLE ============ -->
+<section class="tabpage" id="tab-people">
+  <p class="stripline">Contributor concentration &amp; retention</p>
+  <div class="grid3">
+    <div class="kpi mini"><div class="kt"><span class="kl">Users</span></div><div class="kv num" id="pkUsers">0</div></div>
+    <div class="kpi mini"><div class="kt"><span class="kl">Contributors</span></div><div class="kv num" id="pkContrib">0</div></div>
+    <div class="kpi mini"><div class="kt"><span class="kl">Users for 80% of activity</span></div><div class="kv num" id="pk80">0</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="ptop"><div><div class="ptitle">Activity concentration (Pareto)</div>
+        <div class="pcap">Bars = activity per user, ranked. Line = running share of all activity.</div></div>
+        <div class="chips"><span class="chip"><i style="background:var(--new)"></i>Activity</span>
+          <span class="chip"><i style="background:var(--work)"></i>Cumulative %</span></div></div>
+      <div class="chart"><canvas id="paretoChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="ptop"><div><div class="ptitle">Weekly retention</div>
+        <div class="pcap">Rows = first-login week. Columns = % of that group active N weeks later.</div></div></div>
+      <div class="scroll"><table class="heat" id="retentionTable"></table></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search name or email">
+      <select id="fType"><option value="">All users</option><option value="c">Contributors</option>
+        <option value="r">Returning</option><option value="s">Single login</option></select>
+      <span class="lbl num" id="pcount"></span>
+      <button class="btn" id="csvUsers" style="margin-left:auto">CSV</button>
+    </div>
+    <div class="scroll"><table id="userTable"></table></div>
+  </div>
+</section>
+
+</main>
+<footer>Generated 21 Oct 2026, 11:08 AM &middot; analyze_logs.py &middot; outlier flags = value outside its own trailing average &plusmn; 1.3&sigma;</footer>
 
 <script>
-const palette = {
-  blue: "#2F5496", teal: "#2A9D8F", orange: "#E76F51",
-  purple: "#8E44AD", grey: "#95A5A6"
-};
+const D = {"summary": {"people": 49, "only_once": 0, "came_back": 49, "contributors": 48, "logins": 651, "distinct_datasets": 41}, "weeks": [{"name": "05 Jun - 11 Jun", "label": "05 Jun - 11 Jun", "range": "05 Jun 2026 to 11 Jun 2026", "partial": false, "unique_users": 21, "new_users": 21, "back_users": 0, "logins": 173, "contribute": 45, "ds_events": 12, "ds_distinct": 9, "new_datasets": 9, "retouched_datasets": 0}, {"name": "12 Jun - 18 Jun", "label": "12 Jun - 18 Jun", "range": "12 Jun 2026 to 18 Jun 2026", "partial": false, "unique_users": 7, "new_users": 4, "back_users": 3, "logins": 83, "contribute": 22, "ds_events": 13, "ds_distinct": 6, "new_datasets": 6, "retouched_datasets": 0}, {"name": "19 Jun - 25 Jun", "label": "19 Jun - 25 Jun", "range": "19 Jun 2026 to 25 Jun 2026", "partial": false, "unique_users": 5, "new_users": 4, "back_users": 1, "logins": 22, "contribute": 6, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}, {"name": "26 Jun - 02 Jul", "label": "26 Jun - 02 Jul", "range": "26 Jun 2026 to 02 Jul 2026", "partial": false, "unique_users": 2, "new_users": 1, "back_users": 1, "logins": 36, "contribute": 12, "ds_events": 3, "ds_distinct": 3, "new_datasets": 3, "retouched_datasets": 0}, {"name": "03 Jul - 09 Jul", "label": "03 Jul - 09 Jul", "range": "03 Jul 2026 to 09 Jul 2026", "partial": false, "unique_users": 2, "new_users": 1, "back_users": 1, "logins": 59, "contribute": 9, "ds_events": 3, "ds_distinct": 2, "new_datasets": 2, "retouched_datasets": 0}, {"name": "10 Jul - 16 Jul", "label": "10 Jul - 16 Jul", "range": "10 Jul 2026 to 16 Jul 2026", "partial": false, "unique_users": 1, "new_users": 1, "back_users": 0, "logins": 23, "contribute": 6, "ds_events": 5, "ds_distinct": 1, "new_datasets": 1, "retouched_datasets": 0}, {"name": "17 Jul - 23 Jul", "label": "17 Jul - 23 Jul", "range": "17 Jul 2026 to 23 Jul 2026", "partial": false, "unique_users": 2, "new_users": 0, "back_users": 2, "logins": 35, "contribute": 12, "ds_events": 7, "ds_distinct": 3, "new_datasets": 3, "retouched_datasets": 0}, {"name": "24 Jul - 30 Jul", "label": "24 Jul - 30 Jul", "range": "24 Jul 2026 to 30 Jul 2026", "partial": false, "unique_users": 1, "new_users": 0, "back_users": 1, "logins": 6, "contribute": 1, "ds_events": 3, "ds_distinct": 1, "new_datasets": 1, "retouched_datasets": 0}, {"name": "31 Jul - 06 Aug", "label": "31 Jul - 06 Aug", "range": "31 Jul 2026 to 06 Aug 2026", "partial": false, "unique_users": 2, "new_users": 2, "back_users": 0, "logins": 26, "contribute": 8, "ds_events": 6, "ds_distinct": 1, "new_datasets": 1, "retouched_datasets": 0}, {"name": "07 Aug - 13 Aug", "label": "07 Aug - 13 Aug", "range": "07 Aug 2026 to 13 Aug 2026", "partial": false, "unique_users": 0, "new_users": 0, "back_users": 0, "logins": 0, "contribute": 0, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}, {"name": "14 Aug - 20 Aug", "label": "14 Aug - 20 Aug", "range": "14 Aug 2026 to 20 Aug 2026", "partial": false, "unique_users": 3, "new_users": 3, "back_users": 0, "logins": 13, "contribute": 5, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}, {"name": "21 Aug - 27 Aug", "label": "21 Aug - 27 Aug", "range": "21 Aug 2026 to 27 Aug 2026", "partial": false, "unique_users": 2, "new_users": 1, "back_users": 1, "logins": 40, "contribute": 7, "ds_events": 9, "ds_distinct": 3, "new_datasets": 3, "retouched_datasets": 0}, {"name": "28 Aug - 03 Sep", "label": "28 Aug - 03 Sep", "range": "28 Aug 2026 to 03 Sep 2026", "partial": false, "unique_users": 1, "new_users": 0, "back_users": 1, "logins": 8, "contribute": 1, "ds_events": 1, "ds_distinct": 1, "new_datasets": 1, "retouched_datasets": 0}, {"name": "04 Sep - 10 Sep", "label": "04 Sep - 10 Sep", "range": "04 Sep 2026 to 10 Sep 2026", "partial": false, "unique_users": 3, "new_users": 1, "back_users": 2, "logins": 29, "contribute": 4, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}, {"name": "11 Sep - 17 Sep", "label": "11 Sep - 17 Sep", "range": "11 Sep 2026 to 17 Sep 2026", "partial": false, "unique_users": 5, "new_users": 4, "back_users": 1, "logins": 42, "contribute": 8, "ds_events": 15, "ds_distinct": 4, "new_datasets": 4, "retouched_datasets": 0}, {"name": "18 Sep - 24 Sep", "label": "18 Sep - 24 Sep", "range": "18 Sep 2026 to 24 Sep 2026", "partial": false, "unique_users": 8, "new_users": 5, "back_users": 3, "logins": 26, "contribute": 11, "ds_events": 1, "ds_distinct": 1, "new_datasets": 1, "retouched_datasets": 0}, {"name": "25 Sep - 01 Oct", "label": "25 Sep - 01 Oct", "range": "25 Sep 2026 to 01 Oct 2026", "partial": false, "unique_users": 2, "new_users": 1, "back_users": 1, "logins": 30, "contribute": 10, "ds_events": 9, "ds_distinct": 3, "new_datasets": 3, "retouched_datasets": 0}, {"name": "02 Oct - 08 Oct", "label": "02 Oct - 08 Oct", "range": "02 Oct 2026 to 08 Oct 2026", "partial": false, "unique_users": 0, "new_users": 0, "back_users": 0, "logins": 0, "contribute": 0, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}, {"name": "09 Oct - 15 Oct", "label": "09 Oct - 15 Oct", "range": "09 Oct 2026 to 15 Oct 2026", "partial": false, "unique_users": 0, "new_users": 0, "back_users": 0, "logins": 0, "contribute": 0, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}, {"name": "16 Oct - 21 Oct", "label": "16 Oct - 21 Oct *", "range": "16 Oct 2026 to 21 Oct 2026", "partial": true, "unique_users": 0, "new_users": 0, "back_users": 0, "logins": 0, "contribute": 0, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}], "months": [{"name": "Jun 2026", "label": "Jun 2026 *", "range": "05 Jun 2026 to 30 Jun 2026", "partial": true, "unique_users": 30, "new_users": 30, "back_users": 0, "logins": 314, "contribute": 85, "ds_events": 28, "ds_distinct": 18, "new_datasets": 18, "retouched_datasets": 0}, {"name": "Jul 2026", "label": "Jul 2026", "range": "01 Jul 2026 to 31 Jul 2026", "partial": false, "unique_users": 5, "new_users": 2, "back_users": 3, "logins": 123, "contribute": 28, "ds_events": 18, "ds_distinct": 7, "new_datasets": 7, "retouched_datasets": 0}, {"name": "Aug 2026", "label": "Aug 2026", "range": "01 Aug 2026 to 31 Aug 2026", "partial": false, "unique_users": 6, "new_users": 6, "back_users": 0, "logins": 79, "contribute": 20, "ds_events": 15, "ds_distinct": 4, "new_datasets": 4, "retouched_datasets": 0}, {"name": "Sep 2026", "label": "Sep 2026", "range": "01 Sep 2026 to 30 Sep 2026", "partial": false, "unique_users": 14, "new_users": 11, "back_users": 3, "logins": 135, "contribute": 34, "ds_events": 26, "ds_distinct": 9, "new_datasets": 9, "retouched_datasets": 0}, {"name": "Oct 2026", "label": "Oct 2026 *", "range": "01 Oct 2026 to 21 Oct 2026", "partial": true, "unique_users": 0, "new_users": 0, "back_users": 0, "logins": 0, "contribute": 0, "ds_events": 0, "ds_distinct": 0, "new_datasets": 0, "retouched_datasets": 0}], "users": [{"name": "Dr Reebu John", "email": "reebujohn@gmail.com", "logins": 56, "first": "2026-06-30 09:54", "last": "2026-07-22 10:47", "contribute": 11, "ds_count": 5, "ds_ids": "154, 159, 169, 170, 171", "type": "Returning"}, {"name": "Yogita Chaudhary", "email": "yatichaudhary2@gmail.com", "logins": 50, "first": "2026-06-13 07:51", "last": "2026-09-25 16:46", "contribute": 9, "ds_count": 5, "ds_ids": "101, 102, 103, 262, 263", "type": "Returning"}, {"name": "Dr. T. Jeromie Wesley Vivian", "email": "stanjeromie@nieicmr.org.in", "logins": 46, "first": "2026-08-27 09:50", "last": "2026-09-10 12:43", "contribute": 8, "ds_count": 4, "ds_ids": "221, 232, 234, 236", "type": "Returning"}, {"name": "Giridharan S", "email": "giridharan@indiafetp.com", "logins": 40, "first": "2026-06-09 09:08", "last": "2026-06-19 11:41", "contribute": 5, "ds_count": 2, "ds_ids": "93, 97", "type": "Returning"}, {"name": "Lopamudra Mohanty", "email": "epidemiologistlopa@gmail.com", "logins": 33, "first": "2026-09-16 16:05", "last": "2026-09-18 15:15", "contribute": 6, "ds_count": 3, "ds_ids": "248, 249, 250", "type": "Returning"}, {"name": "Sharan Murali", "email": "sharanmurali@gmail.com", "logins": 29, "first": "2026-06-05 05:03", "last": "2026-09-07 21:36", "contribute": 5, "ds_count": 2, "ds_ids": "86, 87", "type": "Returning"}, {"name": "Kimberley D'Souza", "email": "kimberleydsouza1296@gmail.com", "logins": 29, "first": "2026-06-23 23:53", "last": "2026-06-29 20:08", "contribute": 12, "ds_count": 4, "ds_ids": "145, 146, 148, 150", "type": "Returning"}, {"name": "Soumya Pillai", "email": "dr.soumyapillai@gmail.com", "logins": 28, "first": "2026-07-04 18:09", "last": "2026-07-06 19:55", "contribute": 3, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Shanmugasundaram P", "email": "shanstats11@gmail.com", "logins": 26, "first": "2026-06-05 17:28", "last": "2026-07-27 10:42", "contribute": 4, "ds_count": 3, "ds_ids": "88, 96, 174", "type": "Returning"}, {"name": "Dr Rakesh Roshan Bhardwaj", "email": "rakesh9342@gmail.com", "logins": 23, "first": "2026-07-16 14:53", "last": "2026-07-16 15:35", "contribute": 6, "ds_count": 1, "ds_ids": "166", "type": "Returning"}, {"name": "Amarthya Ravi", "email": "amarthya@datakaveri.org", "logins": 22, "first": "2026-06-23 16:17", "last": "2026-07-21 18:09", "contribute": 11, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Shalabh Jain", "email": "shalabh.jain@cdpg.org.in", "logins": 22, "first": "2026-06-07 20:11", "last": "2026-06-07 20:26", "contribute": 8, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Shri Vijay Bala Yogendra Shivakumar", "email": "shrivijay.md@gmail.com", "logins": 21, "first": "2026-08-20 16:28", "last": "2026-08-21 10:36", "contribute": 4, "ds_count": 2, "ds_ids": "213, 214", "type": "Returning"}, {"name": "Mirza Tosher Ahemad Beg", "email": "tosher108@gmail.com", "logins": 18, "first": "2026-08-06 11:55", "last": "2026-08-06 16:37", "contribute": 4, "ds_count": 1, "ds_ids": "176", "type": "Returning"}, {"name": "Firos Khan V", "email": "firoskhan43@gmail.com", "logins": 18, "first": "2026-09-27 11:39", "last": "2026-09-27 12:15", "contribute": 8, "ds_count": 1, "ds_ids": "264", "type": "Returning"}, {"name": "SUPARNA NS", "email": "suparnasubramanian097@gmail.com", "logins": 17, "first": "2026-09-07 20:49", "last": "2026-09-21 14:58", "contribute": 2, "ds_count": 2, "ds_ids": "252, 258", "type": "Returning"}, {"name": "Salin Eliyas", "email": "salins13@gmail.com", "logins": 14, "first": "2026-06-10 22:37", "last": "2026-06-10 23:25", "contribute": 5, "ds_count": 1, "ds_ids": "98", "type": "Returning"}, {"name": "Dr Ananth M", "email": "drananth7@gmail.com", "logins": 13, "first": "2026-06-15 10:27", "last": "2026-06-15 11:17", "contribute": 2, "ds_count": 2, "ds_ids": "104, 105", "type": "Returning"}, {"name": "Priyanka S", "email": "tvmdistrictepidemiologist2024@gmail.com", "logins": 12, "first": "2026-06-08 23:02", "last": "2026-06-16 16:45", "contribute": 4, "ds_count": 1, "ds_ids": "106", "type": "Returning"}, {"name": "Gopi Kumbha", "email": "k.gopi@safetynet-web.org", "logins": 11, "first": "2026-06-11 16:15", "last": "2026-06-11 16:22", "contribute": 3, "ds_count": 1, "ds_ids": "99", "type": "Returning"}, {"name": "Sabyasachi Swamy", "email": "dsumayurbhanja@gmail.com", "logins": 10, "first": "2026-06-08 07:26", "last": "2026-06-08 07:46", "contribute": 3, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Vara prasad Pittala", "email": "drvaras10@gmail.com", "logins": 10, "first": "2026-06-11 11:37", "last": "2026-06-13 13:34", "contribute": 4, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Dr Udit Pradhan", "email": "druditz16@gmail.com", "logins": 10, "first": "2026-06-07 22:16", "last": "2026-06-07 22:24", "contribute": 5, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "", "email": "munirajmallesan@gmail.com", "logins": 9, "first": "2026-06-09 14:20", "last": "2026-06-09 14:35", "contribute": 0, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Akilandeswari E", "email": "akila.icmrnie@gmail.com", "logins": 9, "first": "2026-08-19 10:55", "last": "2026-08-19 15:14", "contribute": 3, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Tanveer Rehman", "email": "drtanveerrehman@gmail.com", "logins": 9, "first": "2026-06-11 21:30", "last": "2026-06-12 16:09", "contribute": 4, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Dr Sarath Mohan", "email": "sarathmohan.50160@gmail.com", "logins": 8, "first": "2026-08-03 11:12", "last": "2026-08-03 11:15", "contribute": 4, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Zohmingsanga '-", "email": "zohmingsanga@jhpiego.org", "logins": 6, "first": "2026-06-13 13:25", "last": "2026-06-13 13:30", "contribute": 3, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "ARUN K P", "email": "8281378462a@gmail.com", "logins": 6, "first": "2026-09-16 14:06", "last": "2026-09-18 15:01", "contribute": 3, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Vijaypal Singh", "email": "drvjys@gmail.com", "logins": 6, "first": "2026-06-08 10:41", "last": "2026-06-08 10:47", "contribute": 1, "ds_count": 1, "ds_ids": "91", "type": "Returning"}, {"name": "Dr. Kiruthika V", "email": "kikki301@gmail.com", "logins": 4, "first": "2026-09-15 20:10", "last": "2026-09-15 21:16", "contribute": 2, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Rashmi Kochuveettil", "email": "19rashmi11@gmail.com", "logins": 2, "first": "2026-06-21 22:22", "last": "2026-06-21 22:22", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Chandrakala M", "email": "chandrakalam1412001@gmail.com", "logins": 2, "first": "2026-09-21 12:24", "last": "2026-09-21 12:24", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Siddharth Vijayan", "email": "drsiddharthvijayan@gmail.com", "logins": 2, "first": "2026-06-13 23:51", "last": "2026-06-13 23:51", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Dhanya B Mohan", "email": "drdhanyabmohan@gmail.com", "logins": 2, "first": "2026-09-21 12:08", "last": "2026-09-21 12:08", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Nisamudeen Akkaparamban", "email": "drnisam.ap@gmail.com", "logins": 2, "first": "2026-09-18 15:13", "last": "2026-09-18 15:13", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "DR SATISH KUMAR NAYAK", "email": "drsatishnayak1@gmail.com", "logins": 2, "first": "2026-06-09 21:27", "last": "2026-06-09 21:27", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Aldo Binolin", "email": "aldobino11@gmail.com", "logins": 2, "first": "2026-09-16 10:45", "last": "2026-09-16 10:45", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Brajaraj Prusty", "email": "bapubraja100@gmail.com", "logins": 2, "first": "2026-06-10 18:04", "last": "2026-06-10 18:04", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "PRADIP KUMAR BHOI", "email": "bhoipradipk@gmail.com", "logins": 2, "first": "2026-06-09 08:57", "last": "2026-06-09 08:57", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Reema Sarangi", "email": "dsucuttack2023@gmail.com", "logins": 2, "first": "2026-06-08 11:13", "last": "2026-06-08 11:13", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Pasula Sangeetha", "email": "pasulasangeetha5@gmail.com", "logins": 2, "first": "2026-09-21 14:00", "last": "2026-09-21 14:00", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Mathan K", "email": "kmathan@gmail.com", "logins": 2, "first": "2026-06-08 13:01", "last": "2026-06-08 13:01", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Sanjay Kumar Patel", "email": "dsusundergarh@gmail.com", "logins": 2, "first": "2026-06-10 10:03", "last": "2026-06-10 10:03", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Dr Shakti Prasad Mishra", "email": "shaktimishra925@gmail.com", "logins": 2, "first": "2026-06-08 12:05", "last": "2026-06-08 12:05", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Dr Sreeshma Narayanan PP", "email": "sreeshmanarayan@gmail.com", "logins": 2, "first": "2026-06-22 10:58", "last": "2026-06-22 10:58", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Tharisha K", "email": "uphumlpm@gmail.com", "logins": 2, "first": "2026-09-18 14:06", "last": "2026-09-18 14:06", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "Vasanth Rajaraman", "email": "vasanth.rajaraman@datakaveri.org", "logins": 2, "first": "2026-06-07 20:09", "last": "2026-06-07 20:09", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}, {"name": "VAIDYA RAVITEJA", "email": "vaidya.raviteja@gmail.com", "logins": 2, "first": "2026-08-17 12:29", "last": "2026-08-17 12:29", "contribute": 1, "ds_count": 0, "ds_ids": "", "type": "Returning"}], "datasets": [{"dataset_id": 250, "total_actions": 6, "edits": 2, "views": 4, "distinct_users": 1, "first_touch": "2026-09-16 17:01", "last_touch": "2026-09-16 17:09"}, {"dataset_id": 176, "total_actions": 6, "edits": 2, "views": 4, "distinct_users": 1, "first_touch": "2026-08-06 12:53", "last_touch": "2026-08-06 12:54"}, {"dataset_id": 166, "total_actions": 5, "edits": 3, "views": 2, "distinct_users": 1, "first_touch": "2026-07-16 15:31", "last_touch": "2026-07-16 15:35"}, {"dataset_id": 221, "total_actions": 5, "edits": 2, "views": 3, "distinct_users": 1, "first_touch": "2026-08-27 14:39", "last_touch": "2026-08-27 14:42"}, {"dataset_id": 214, "total_actions": 4, "edits": 2, "views": 2, "distinct_users": 1, "first_touch": "2026-08-21 10:14", "last_touch": "2026-08-21 10:36"}, {"dataset_id": 102, "total_actions": 3, "edits": 3, "views": 0, "distinct_users": 1, "first_touch": "2026-06-13 13:08", "last_touch": "2026-06-13 13:11"}, {"dataset_id": 169, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-07-22 10:17", "last_touch": "2026-07-22 10:37"}, {"dataset_id": 101, "total_actions": 3, "edits": 3, "views": 0, "distinct_users": 1, "first_touch": "2026-06-13 09:15", "last_touch": "2026-06-13 09:21"}, {"dataset_id": 174, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-07-27 10:42", "last_touch": "2026-07-27 10:42"}, {"dataset_id": 252, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-09-17 01:41", "last_touch": "2026-09-17 01:41"}, {"dataset_id": 248, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-09-16 16:18", "last_touch": "2026-09-16 16:21"}, {"dataset_id": 249, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-09-16 16:46", "last_touch": "2026-09-16 16:46"}, {"dataset_id": 213, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-08-21 10:07", "last_touch": "2026-08-21 10:07"}, {"dataset_id": 170, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-07-22 10:40", "last_touch": "2026-07-22 10:45"}, {"dataset_id": 264, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-09-27 12:02", "last_touch": "2026-09-27 12:05"}, {"dataset_id": 263, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-09-25 16:46", "last_touch": "2026-09-25 16:46"}, {"dataset_id": 262, "total_actions": 3, "edits": 1, "views": 2, "distinct_users": 1, "first_touch": "2026-09-25 14:47", "last_touch": "2026-09-25 14:47"}, {"dataset_id": 86, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-06-05 05:51", "last_touch": "2026-06-05 06:05"}, {"dataset_id": 104, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-06-15 10:37", "last_touch": "2026-06-15 10:38"}, {"dataset_id": 106, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-06-16 16:43", "last_touch": "2026-06-16 16:45"}, {"dataset_id": 103, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-06-13 13:25", "last_touch": "2026-06-13 13:28"}, {"dataset_id": 150, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-06-29 20:05", "last_touch": "2026-06-29 20:05"}, {"dataset_id": 154, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-07-03 16:25", "last_touch": "2026-07-03 16:29"}, {"dataset_id": 99, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-06-11 16:21", "last_touch": "2026-06-11 16:22"}, {"dataset_id": 87, "total_actions": 2, "edits": 2, "views": 0, "distinct_users": 1, "first_touch": "2026-06-05 10:08", "last_touch": "2026-06-05 10:21"}, {"dataset_id": 98, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-10 22:49", "last_touch": "2026-06-10 22:49"}, {"dataset_id": 97, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-10 17:13", "last_touch": "2026-06-10 17:13"}, {"dataset_id": 96, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-09 15:12", "last_touch": "2026-06-09 15:12"}, {"dataset_id": 93, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-09 09:42", "last_touch": "2026-06-09 09:42"}, {"dataset_id": 88, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-07 08:38", "last_touch": "2026-06-07 08:38"}, {"dataset_id": 91, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-08 10:47", "last_touch": "2026-06-08 10:47"}, {"dataset_id": 145, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-26 20:29", "last_touch": "2026-06-26 20:29"}, {"dataset_id": 105, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-15 11:17", "last_touch": "2026-06-15 11:17"}, {"dataset_id": 171, "total_actions": 1, "edits": 0, "views": 1, "distinct_users": 1, "first_touch": "2026-07-22 10:47", "last_touch": "2026-07-22 10:47"}, {"dataset_id": 159, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-07-06 23:29", "last_touch": "2026-07-06 23:29"}, {"dataset_id": 148, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "2026-06-28 18:04", "last_touch": "2026-06-28 18:04"}, {"dataset_id": 146, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "", "last_touch": ""}, {"dataset_id": 236, "total_actions": 1, "edits": 1, "views": 0, "distinct_users": 1, "first_touch": "", "last_touch": ""}, {"dataset_id": 234, "total_actions": 1, "edits": 0, "views": 1, "distinct_users": 1, "first_touch": "", "last_touch": ""}, {"dataset_id": 232, "total_actions": 1, "edits": 0, "views": 1, "distinct_users": 1, "first_touch": "2026-09-03 12:17", "last_touch": "2026-09-03 12:17"}, {"dataset_id": 258, "total_actions": 1, "edits": 0, "views": 1, "distinct_users": 1, "first_touch": "2026-09-21 14:58", "last_touch": "2026-09-21 14:58"}], "pareto": [{"label": "Dr Reebu John", "value": 77, "cum_pct": 8.4}, {"label": "Yogita Chaudhary", "value": 73, "cum_pct": 16.4}, {"label": "Dr. T. Jeromie Wesley Vivian", "value": 62, "cum_pct": 23.2}, {"label": "Lopamudra Mohanty", "value": 51, "cum_pct": 28.7}, {"label": "Giridharan S", "value": 47, "cum_pct": 33.9}, {"label": "Kimberley D'Souza", "value": 46, "cum_pct": 38.9}, {"label": "Sharan Murali", "value": 38, "cum_pct": 43.1}, {"label": "Shanmugasundaram P", "value": 35, "cum_pct": 46.9}, {"label": "Dr Rakesh Roshan Bhardwaj", "value": 34, "cum_pct": 50.6}, {"label": "Amarthya Ravi", "value": 33, "cum_pct": 54.2}, {"label": "Shri Vijay Bala Yogendra Shivakumar", "value": 32, "cum_pct": 57.7}, {"label": "Soumya Pillai", "value": 31, "cum_pct": 61.1}, {"label": "Shalabh Jain", "value": 30, "cum_pct": 64.4}, {"label": "Firos Khan V", "value": 29, "cum_pct": 67.5}, {"label": "Mirza Tosher Ahemad Beg", "value": 28, "cum_pct": 70.6}, {"label": "SUPARNA NS", "value": 23, "cum_pct": 73.1}, {"label": "Salin Eliyas", "value": 20, "cum_pct": 75.3}, {"label": "Dr Ananth M", "value": 18, "cum_pct": 77.3}, {"label": "Priyanka S", "value": 18, "cum_pct": 79.2}, {"label": "Gopi Kumbha", "value": 16, "cum_pct": 81.0}, {"label": "Others (29)", "value": 174, "cum_pct": 100.0}], "retention": [{"cohort_label": "05 Jun - 11 Jun", "size": 21, "cells": [100.0, 14.3, 4.8, 0.0, 0.0, 0.0]}, {"cohort_label": "12 Jun - 18 Jun", "size": 4, "cells": [100.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, {"cohort_label": "19 Jun - 25 Jun", "size": 4, "cells": [100.0, 25.0, 0.0, 0.0, 25.0, 0.0]}, {"cohort_label": "26 Jun - 02 Jul", "size": 1, "cells": [100.0, 100.0, 0.0, 100.0, 0.0, 0.0]}, {"cohort_label": "03 Jul - 09 Jul", "size": 1, "cells": [100.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, {"cohort_label": "10 Jul - 16 Jul", "size": 1, "cells": [100.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, {"cohort_label": "31 Jul - 06 Aug", "size": 2, "cells": [100.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, {"cohort_label": "14 Aug - 20 Aug", "size": 3, "cells": [100.0, 33.3, 0.0, 0.0, 0.0, 0.0]}, {"cohort_label": "21 Aug - 27 Aug", "size": 1, "cells": [100.0, 100.0, 100.0, 0.0, 0.0, 0.0]}, {"cohort_label": "04 Sep - 10 Sep", "size": 1, "cells": [100.0, 100.0, 100.0, 0.0, null, null]}, {"cohort_label": "11 Sep - 17 Sep", "size": 4, "cells": [100.0, 50.0, 0.0, null, null, null]}, {"cohort_label": "18 Sep - 24 Sep", "size": 5, "cells": [100.0, 0.0, null, null, null, null]}, {"cohort_label": "25 Sep - 01 Oct", "size": 1, "cells": [100.0, null, null, null, null, null]}]};
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sum = a => a.reduce((x, y) => x + y, 0);
+const fmtPct = n => (n > 0 ? '+' : '') + Math.round(n) + '%';
 
+let TAB = 'overview', VIEW = 'week', LIMIT = 10, charts = [];
+const allRows = () => VIEW === 'week' ? D.weeks : D.months;
+const rows = () => { const a = allRows(); return LIMIT ? a.slice(-LIMIT) : a; };
+const W = () => VIEW === 'week' ? { one: 'week', axis: 'Week (Fri-Thu)' } : { one: 'month', axis: 'Month' };
 
-const weeks = ["05-Jun-2026 to 11-Jun-2026 (Fri-Thu)", "12-Jun-2026 to 18-Jun-2026 (Fri-Thu)", "19-Jun-2026 to 25-Jun-2026 (Fri-Thu)", "26-Jun-2026 to 02-Jul-2026 (Fri-Thu)", "03-Jul-2026 to 09-Jul-2026 (Fri-Thu)", "10-Jul-2026 to 16-Jul-2026 (Fri-Thu)", "17-Jul-2026 to 23-Jul-2026 (Fri-Thu)", "24-Jul-2026 to 30-Jul-2026 (Fri-Thu)", "31-Jul-2026 to 06-Aug-2026 (Fri-Thu)", "07-Aug-2026 to 13-Aug-2026 (Fri-Thu)", "14-Aug-2026 to 20-Aug-2026 (Fri-Thu)", "21-Aug-2026 to 27-Aug-2026 (Fri-Thu)", "28-Aug-2026 to 03-Sep-2026 (Fri-Thu)", "04-Sep-2026 to 10-Sep-2026 (Fri-Thu)", "11-Sep-2026 to 17-Sep-2026 (Fri-Thu)", "18-Sep-2026 to 24-Sep-2026 (Fri-Thu)", "25-Sep-2026 to 01-Oct-2026 (Fri-Thu)"];
+Chart.defaults.font.family = '-apple-system,"Segoe UI",Arial,sans-serif';
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#6b7180';
 
-new Chart(document.getElementById('usersChart'), {
-  type: 'line',
-  data: {
-    labels: weeks,
-    datasets: [
-      { label: 'Total Logins (all events)', data: [173, 83, 22, 36, 59, 23, 35, 6, 26, 0, 13, 40, 8, 29, 42, 26, 30],
-         borderColor: palette.blue, backgroundColor: 'rgba(47,84,150,0.15)',
-         fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
-         pointBorderColor: palette.blue, pointBorderWidth: 2, borderWidth: 2.5,
-         yAxisID: 'yLogins' },
-      { label: 'New Users (first-ever login)', data: [21, 4, 4, 1, 1, 1, 0, 0, 2, 0, 3, 1, 0, 1, 4, 5, 1],
-         borderColor: palette.teal, backgroundColor: 'rgba(42,157,143,0.08)',
-         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
-         pointBorderColor: palette.teal, pointBorderWidth: 2, borderWidth: 2.5,
-         yAxisID: 'yUsers' },
-      { label: 'Repeated-Login Users', data: [0, 3, 1, 1, 1, 0, 2, 1, 0, 0, 0, 1, 1, 2, 1, 3, 1],
-         borderColor: palette.orange, backgroundColor: 'rgba(231,111,81,0.08)',
-         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
-         pointBorderColor: palette.orange, pointBorderWidth: 2, borderWidth: 2.5,
-         yAxisID: 'yUsers' }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    scales: {
-      x: { title: { display: true, text: 'Week (Fri-Thu)' } },
-      yLogins: { beginAtZero: true, position: 'left',
-                  title: { display: true, text: 'Total login events' } },
-      yUsers: { beginAtZero: true, position: 'right',
-                 grid: { drawOnChartArea: false },
-                 title: { display: true, text: 'Number of users' } }
-    },
-    plugins: { legend: { position: 'bottom' } }
-  }
-});
+/* -------- outlier flags: trailing-window mean/std, |z| > 1.3 -------- */
+function flagOutliers(values, window) {
+  window = window || 4;
+  return values.map((v, i) => {
+    const start = Math.max(0, i - window);
+    const prior = values.slice(start, i);
+    if (prior.length < 3) return 0;
+    const mean = prior.reduce((a, b) => a + b, 0) / prior.length;
+    const variance = prior.reduce((a, b) => a + (b - mean) * (b - mean), 0) / prior.length;
+    const sd = Math.sqrt(variance);
+    if (sd === 0) return 0;
+    const z = (v - mean) / sd;
+    if (z > 1.3) return 1;      // spike
+    if (z < -1.3) return -1;    // drop
+    return 0;
+  });
+}
+function pointColors(values, base, flags) {
+  return values.map((v, i) => flags[i] === 1 ? '#f59e0b' : flags[i] === -1 ? '#e11d48' : base);
+}
+function pointRadii(flags) { return flags.map(f => f === 0 ? 2 : 5); }
 
-new Chart(document.getElementById('contribChart'), {
-  type: 'line',
-  data: {
-    labels: weeks,
-    datasets: [
-      { label: 'Contribute-Page Visits', data: [45, 22, 6, 12, 9, 6, 12, 1, 8, 0, 5, 7, 1, 4, 8, 11, 10],
-         borderColor: palette.orange, backgroundColor: 'rgba(231,111,81,0.15)',
-         fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
-         pointBorderColor: palette.orange, pointBorderWidth: 2, borderWidth: 2.5,
-         yAxisID: 'yActivity' },
-      { label: 'Dataset Touch Events (edit + view)', data: [12, 13, 0, 3, 3, 5, 7, 3, 6, 0, 0, 9, 1, 0, 15, 1, 9],
-         borderColor: palette.purple, backgroundColor: 'rgba(142,68,173,0.08)',
-         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
-         pointBorderColor: palette.purple, pointBorderWidth: 2, borderWidth: 2.5,
-         yAxisID: 'yActivity' },
-      { label: 'Distinct Datasets Touched', data: [9, 6, 0, 3, 2, 1, 3, 1, 1, 0, 0, 3, 1, 0, 4, 1, 3],
-         borderColor: palette.blue, backgroundColor: 'rgba(47,84,150,0.08)',
-         fill: false, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
-         pointBorderColor: palette.blue, pointBorderWidth: 2, borderWidth: 2.5,
-         yAxisID: 'yDatasets' }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    scales: {
-      x: { title: { display: true, text: 'Week (Fri-Thu)' } },
-      yActivity: { beginAtZero: true, position: 'left',
-                    title: { display: true, text: 'Visits / touch events' } },
-      yDatasets: { beginAtZero: true, position: 'right',
-                    grid: { drawOnChartArea: false },
-                    title: { display: true, text: 'Distinct datasets' } }
-    },
-    plugins: { legend: { position: 'bottom' } }
-  }
-});
+function sparkline(values, color) {
+  if (!values || values.length < 2) return '';
+  const w = 100, h = 26, min = Math.min(...values), max = Math.max(...values), range = (max - min) || 1;
+  const step = w / (values.length - 1);
+  const pts = values.map((v, i) => (i * step).toFixed(1) + ',' + (h - ((v - min) / range) * (h - 4) - 2).toFixed(1)).join(' ');
+  return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+    '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.8"/></svg>';
+}
+function kpiCard(label, cur, prev, series, color, mini) {
+  const d = prev == null ? null : cur - prev;
+  const pct = (prev) ? (d / prev * 100) : (cur > 0 ? 100 : 0);
+  const cls = d == null ? 'flat' : d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
+  const badge = d == null ? '' : '<span class="badge ' + cls + '">' + (d === 0 ? '\u2013' : fmtPct(pct)) + '</span>';
+  const mx = Math.max(cur, prev || 0, 1);
+  const cmp = prev == null ? '' :
+    '<div class="cbar"><span class="cl">Prev</span><div class="track"><i style="width:' + (prev / mx * 100) + '%;background:#c7cbe0"></i></div><span class="cv num">' + prev + '</span></div>' +
+    '<div class="cbar"><span class="cl">Now</span><div class="track"><i style="width:' + (cur / mx * 100) + '%;background:' + color + '"></i></div><span class="cv num">' + cur + '</span></div>';
+  return '<div class="kpi' + (mini ? ' mini' : '') + '"><div class="kt"><span class="kl">' + label + '</span>' + badge + '</div>' +
+    '<div class="kv num">' + cur + '</div>' + sparkline(series, color) + cmp + '</div>';
+}
 
-new Chart(document.getElementById('kpi_spark_0'), {
-  type: 'line',
-  data: {
-    labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [7, 6], borderColor: '#E76F51', backgroundColor: '#E76F51',
-      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
-      pointBorderColor: '#E76F51', pointBorderWidth: 2, borderWidth: 2.5 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    scales: {
-      x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(7, 6, 1) * 1.2 }
-    }
-  }
-});
-new Chart(document.getElementById('kpi_spark_1'), {
-  type: 'line',
-  data: {
-    labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [6, 4], borderColor: '#E76F51', backgroundColor: '#E76F51',
-      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
-      pointBorderColor: '#E76F51', pointBorderWidth: 2, borderWidth: 2.5 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    scales: {
-      x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(6, 4, 1) * 1.2 }
-    }
-  }
-});
-new Chart(document.getElementById('kpi_spark_2'), {
-  type: 'line',
-  data: {
-    labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [57, 41], borderColor: '#E76F51', backgroundColor: '#E76F51',
-      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
-      pointBorderColor: '#E76F51', pointBorderWidth: 2, borderWidth: 2.5 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    scales: {
-      x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(57, 41, 1) * 1.2 }
-    }
-  }
-});
-new Chart(document.getElementById('kpi_spark_3'), {
-  type: 'line',
-  data: {
-    labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [15, 14], borderColor: '#E76F51', backgroundColor: '#E76F51',
-      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
-      pointBorderColor: '#E76F51', pointBorderWidth: 2, borderWidth: 2.5 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    scales: {
-      x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(15, 14, 1) * 1.2 }
-    }
-  }
-});
-new Chart(document.getElementById('kpi_spark_4'), {
-  type: 'line',
-  data: {
-    labels: ['Previous 7 Days', 'Last 7 Days'],
-    datasets: [{ data: [15, 10], borderColor: '#E76F51', backgroundColor: '#E76F51',
-      fill: false, tension: 0, pointRadius: 4, pointBackgroundColor: '#fff',
-      pointBorderColor: '#E76F51', pointBorderWidth: 2, borderWidth: 2.5 }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    scales: {
-      x: { display: false },
-      y: { display: false, beginAtZero: true, suggestedMax: Math.max(15, 10, 1) * 1.2 }
-    }
-  }
-});
+function baseScales(xTitle, yTitle, y2Title) {
+  const s = {
+    x: { grid: { display: false }, title: { display: true, text: xTitle, font: { size: 10.5 } },
+         ticks: { autoSkip: true, maxRotation: 50, font: { size: 10 } } },
+    y: { beginAtZero: true, grace: '10%', title: { display: true, text: yTitle, font: { size: 10.5 } },
+         grid: { color: '#eef0f5' }, border: { display: false }, ticks: { precision: 0 } }
+  };
+  if (y2Title) s.y2 = { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false },
+    title: { display: true, text: y2Title, font: { size: 10.5 } }, ticks: { precision: 0 } };
+  return s;
+}
+function tip(R) { return { callbacks: { title: it => R[it[0].dataIndex].range } } }
+function mkChart(id, cfg) { charts.push(new Chart($(id), cfg)); }
+function kill() { charts.forEach(c => c.destroy()); charts = []; }
+
+/* ============ OVERVIEW ============ */
+function renderOverview() {
+  const S = D.summary, A = allRows();
+  $('allTimeKpis').innerHTML = [
+    ['Users', S.people], ['Single login', S.only_once], ['Returning', S.came_back],
+    ['Contributors', S.contributors], ['Total logins', S.logins], ['Datasets', S.distinct_datasets]
+  ].map(x => '<div class="kpi mini"><div class="kt"><span class="kl">' + x[0] + '</span></div><div class="kv num">' + x[1] + '</div></div>').join('');
+
+  if (!A.length) { $('latestKpis').innerHTML = '<p class="empty">No data yet.</p>'; return; }
+  const L = A[A.length - 1], P = A.length > 1 ? A[A.length - 2] : null;
+  const spark = k => A.slice(-8).map(r => r[k]);
+  $('latestLabel').textContent = 'Latest ' + W().one + ' (' + L.name + ') vs. previous';
+  $('latestKpis').innerHTML =
+    kpiCard('Users', L.unique_users, P && P.unique_users, spark('unique_users'), 'var(--new)') +
+    kpiCard('New users', L.new_users, P && P.new_users, spark('new_users'), 'var(--new)') +
+    kpiCard('Logins', L.logins, P && P.logins, spark('logins'), 'var(--ink)') +
+    kpiCard('Contribute visits', L.contribute, P && P.contribute, spark('contribute'), 'var(--work)') +
+    kpiCard('Dataset actions', L.ds_events, P && P.ds_events, spark('ds_events'), 'var(--work)');
+
+  const R = rows(), names = R.map(r => r.label);
+  const newA = R.map(r => r.new_users), backA = R.map(r => r.back_users), loginA = R.map(r => r.logins);
+  const flags = flagOutliers(loginA);
+  mkChart('ovChart', {
+    data: { labels: names, datasets: [
+      { type: 'bar', label: 'New users', data: newA, backgroundColor: '#4f46e5', stack: 'u', yAxisID: 'y', maxBarThickness: 40 },
+      { type: 'bar', label: 'Returning users', data: backA, backgroundColor: '#06b6d4', stack: 'u', yAxisID: 'y', maxBarThickness: 40 },
+      { type: 'line', label: 'Logins', data: loginA, borderColor: '#12141c', backgroundColor: '#12141c',
+        pointBackgroundColor: pointColors(loginA, '#12141c', flags), pointRadius: pointRadii(flags),
+        pointBorderColor: '#fff', pointBorderWidth: 1, tension: 0.25, yAxisID: 'y2' }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: tip(R) },
+      scales: Object.assign(baseScales(W().axis, 'Users', 'Logins'), { x: Object.assign(baseScales().x, { stacked: true }), y: Object.assign(baseScales().y, { stacked: true }) }) }
+  });
+}
+
+/* ============ TRENDS ============ */
+function trendPanel(title, cap, id, chips) {
+  return '<div class="panel"><div class="ptop"><div><div class="ptitle">' + title + '</div><div class="pcap">' + cap + '</div></div>' +
+    '<div class="chips">' + chips.map(c => '<span class="chip"><i style="background:' + c[1] + '"></i>' + c[0] + '</span>').join('') + '</div></div>' +
+    '<div class="chart"><canvas id="' + id + '"></canvas></div></div>';
+}
+function renderTrends() {
+  const R = rows();
+  if (!R.length) { $('trendGrid').innerHTML = '<p class="empty">No data yet.</p>'; $('periodTable').innerHTML = ''; return; }
+  const w = W();
+  $('trendGrid').innerHTML =
+    trendPanel('Logins per ' + w.one, 'Line + outlier flags.', 'tLogins', [['Logins', 'var(--ink)']]) +
+    trendPanel('Contribute visits per ' + w.one, 'Completed uses of the Contribute page.', 'tContrib', [['Visits', 'var(--work)']]) +
+    trendPanel('Dataset actions per ' + w.one, 'Edits vs. views.', 'tFiles', [['Edits', 'var(--work)'], ['Views', 'var(--views)']]) +
+    trendPanel('New vs. returning users per ' + w.one, 'Stacked.', 'tUsers', [['New', 'var(--new)'], ['Returning', 'var(--ret)']]);
+
+  const names = R.map(r => r.label);
+  const Lg = R.map(r => r.logins), C = R.map(r => r.contribute), N = R.map(r => r.new_users), B = R.map(r => r.back_users);
+  const E = R.map(r => r.ds_events), Vw = R.map(r => Math.max(r.ds_events - Math.round(r.ds_events * 0.4), 0)); // edits est. fallback unused, real split below
+
+  const flagLg = flagOutliers(Lg), flagC = flagOutliers(C), flagE = flagOutliers(E);
+
+  mkChart('tLogins', { type: 'line', data: { labels: names, datasets: [{ data: Lg, borderColor: '#12141c', backgroundColor: 'rgba(18,20,28,0.06)',
+    fill: true, tension: 0.25, pointBackgroundColor: pointColors(Lg, '#12141c', flagLg), pointRadius: pointRadii(flagLg), pointBorderColor: '#fff', pointBorderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: tip(R) }, scales: baseScales(w.axis, 'Logins') } });
+
+  mkChart('tContrib', { type: 'line', data: { labels: names, datasets: [{ data: C, borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.08)',
+    fill: true, tension: 0.25, pointBackgroundColor: pointColors(C, '#7c3aed', flagC), pointRadius: pointRadii(flagC), pointBorderColor: '#fff', pointBorderWidth: 1 }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: tip(R) }, scales: baseScales(w.axis, 'Visits') } });
+
+  mkChart('tFiles', { data: { labels: names, datasets: [
+      { type: 'bar', label: 'Actions', data: E, backgroundColor: pointColors(E, '#7c3aed', flagE), maxBarThickness: 32 }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: tip(R) }, scales: baseScales(w.axis, 'Dataset actions') } });
+
+  mkChart('tUsers', { type: 'bar', data: { labels: names, datasets: [
+      { label: 'New', data: N, backgroundColor: '#4f46e5', stack: 'u', maxBarThickness: 32 },
+      { label: 'Returning', data: B, backgroundColor: '#06b6d4', stack: 'u', maxBarThickness: 32 }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: tip(R) },
+      scales: { x: { stacked: true, grid: { display: false }, title: { display: true, text: w.axis, font: { size: 10.5 } }, ticks: { autoSkip: true, maxRotation: 50, font: { size: 10 } } },
+                y: { stacked: true, beginAtZero: true, grid: { color: '#eef0f5' }, border: { display: false }, ticks: { precision: 0 } } } } });
+
+  $('periodTable').innerHTML = '<thead><tr><th>' + (VIEW === 'week' ? 'Week' : 'Month') + '</th><th>Dates</th><th class="n">Users</th><th class="n">New</th>' +
+    '<th class="n">Returning</th><th class="n">Logins</th><th class="n">Contribute</th><th class="n">Dataset actions</th><th class="n">Datasets touched</th></tr></thead><tbody>' +
+    R.map(r => '<tr><td>' + esc(r.label) + '</td><td>' + esc(r.range) + '</td><td class="n">' + r.unique_users + '</td><td class="n">' + r.new_users +
+      '</td><td class="n">' + r.back_users + '</td><td class="n">' + r.logins + '</td><td class="n">' + r.contribute + '</td><td class="n">' + r.ds_events + '</td><td class="n">' + r.ds_distinct + '</td></tr>').join('') + '</tbody>';
+}
+$('csvPeriods').onclick = () => csv('usage_by_' + W().one + '.csv',
+  ['Period', 'Dates', 'Users', 'New', 'Returning', 'Logins', 'Contribute', 'Dataset actions', 'Datasets touched'],
+  rows().map(r => [r.name, r.range, r.unique_users, r.new_users, r.back_users, r.logins, r.contribute, r.ds_events, r.ds_distinct]));
+
+/* ============ DATASETS ============ */
+function renderDatasets() {
+  const S = D.summary, w = W(), R = rows(), A = allRows();
+  const last = A.length ? A[A.length - 1] : null;
+  $('dsKpis').innerHTML = [
+    ['Distinct datasets (all time)', S.distinct_datasets],
+    ['Actions (all time)', sum(A.map(r => r.ds_events))],
+    ['New, latest ' + w.one, last ? last.new_datasets : 0],
+    ['Re-touched, latest ' + w.one, last ? last.retouched_datasets : 0]
+  ].map(x => '<div class="kpi mini"><div class="kt"><span class="kl">' + x[0] + '</span></div><div class="kv num">' + x[1] + '</div></div>').join('');
+
+  if (!R.length) { $('datasetTable').innerHTML = '<tr><td class="empty">No dataset activity.</td></tr>'; return; }
+  const names = R.map(r => r.label), newA = R.map(r => r.new_datasets), reA = R.map(r => r.retouched_datasets);
+  mkChart('dsNewChart', { type: 'bar', data: { labels: names, datasets: [
+      { label: 'New', data: newA, backgroundColor: '#4f46e5', stack: 'd', maxBarThickness: 34 },
+      { label: 'Re-touched', data: reA, backgroundColor: '#06b6d4', stack: 'd', maxBarThickness: 34 }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: tip(R) },
+      scales: { x: { stacked: true, grid: { display: false }, title: { display: true, text: w.axis, font: { size: 10.5 } }, ticks: { autoSkip: true, maxRotation: 50, font: { size: 10 } } },
+                y: { stacked: true, beginAtZero: true, grid: { color: '#eef0f5' }, border: { display: false }, ticks: { precision: 0 } } } } });
+
+  let running = 0;
+  const cumLabels = A.map(r => r.label), cumData = A.map(r => running += r.new_datasets);
+  mkChart('dsCumChart', { type: 'line', data: { labels: cumLabels, datasets: [{ data: cumData, borderColor: '#4f46e5',
+    backgroundColor: 'rgba(79,70,229,0.10)', fill: true, tension: 0.15, pointRadius: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } },
+      scales: baseScales(w.axis, 'Datasets (running total)') } });
+
+  const top = D.datasets.slice(0, 10);
+  mkChart('dsTopChart', { type: 'bar', data: { labels: top.map(x => '#' + x.dataset_id), datasets: [
+      { label: 'Edits', data: top.map(x => x.edits), backgroundColor: '#7c3aed', stack: 't', maxBarThickness: 26 },
+      { label: 'Views', data: top.map(x => x.views), backgroundColor: '#c7d2fe', stack: 't', maxBarThickness: 26 }
+    ] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } },
+      scales: { x: { stacked: true, beginAtZero: true, grid: { color: '#eef0f5' }, border: { display: false } },
+                y: { stacked: true, grid: { display: false } } } } });
+
+  const q = ($('dsq').value || '').trim();
+  const list = D.datasets.filter(x => !q || String(x.dataset_id).includes(q));
+  $('datasetTable').innerHTML = '<thead><tr><th>Dataset</th><th class="n">Actions</th><th class="n">Edits</th><th class="n">Views</th>' +
+    '<th class="n">Users</th><th>First touched</th><th>Last touched</th></tr></thead><tbody>' +
+    (list.length ? list.map(x => '<tr><td><b>#' + esc(x.dataset_id) + '</b></td><td class="n">' + x.total_actions + '</td><td class="n">' + x.edits +
+      '</td><td class="n">' + x.views + '</td><td class="n">' + x.distinct_users + '</td><td>' + esc(x.first_touch) + '</td><td>' + esc(x.last_touch) + '</td></tr>').join('')
+      : '<tr><td colspan="7" class="empty">No match.</td></tr>') + '</tbody>';
+}
+$('dsq').oninput = renderDatasets;
+$('csvDatasets').onclick = () => csv('datasets.csv',
+  ['Dataset ID', 'Total actions', 'Edits', 'Views', 'Distinct users', 'First touched', 'Last touched'],
+  D.datasets.map(x => [x.dataset_id, x.total_actions, x.edits, x.views, x.distinct_users, x.first_touch, x.last_touch]));
+
+/* ============ PEOPLE ============ */
+function csv(name, head, body) {
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const text = [head.map(q).join(',')].concat(body.map(r => r.map(q).join(','))).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + text], { type: 'text/csv' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function renderPareto() {
+  $('pkUsers').textContent = D.summary.people;
+  $('pkContrib').textContent = D.summary.contributors;
+  const P = D.pareto;
+  if (!P || !P.length) { $('pk80').textContent = '\u2013'; return; }
+  const labels = P.map(x => x.label), values = P.map(x => x.value), cum = P.map(x => x.cum_pct);
+  mkChart('paretoChart', { data: { labels, datasets: [
+      { type: 'bar', data: values, backgroundColor: '#4f46e5', yAxisID: 'y', order: 2, maxBarThickness: 26 },
+      { type: 'line', data: cum, borderColor: '#7c3aed', backgroundColor: '#7c3aed', yAxisID: 'y2', tension: 0.15, pointRadius: 2, order: 1 }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 65, font: { size: 9.5 } } },
+                y: { beginAtZero: true, title: { display: true, text: 'Activity', font: { size: 10.5 } }, grid: { color: '#eef0f5' }, border: { display: false } },
+                y2: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '% cumulative', font: { size: 10.5 } } } } } });
+  let idx80 = cum.findIndex(v => v >= 80); if (idx80 === -1) idx80 = cum.length - 1;
+  $('pk80').textContent = (idx80 + 1);
+}
+function shade(p) { return p === null ? '#f6f7fb' : 'rgba(79,70,229,' + Math.max(p / 100, 0.06) + ')'; }
+function renderRetention() {
+  const R = D.retention;
+  if (!R || !R.length) { $('retentionTable').innerHTML = '<tr><td class="empty">Not enough weeks yet.</td></tr>'; return; }
+  const nCols = R[0].cells.length;
+  let h = '<thead><tr><th>Cohort</th><th class="n">n</th>' + Array.from({ length: nCols }, (_, i) => '<th class="n">W' + i + '</th>').join('') + '</tr></thead><tbody>';
+  R.forEach(row => { h += '<tr><td>' + esc(row.cohort_label) + '</td><td class="n">' + row.size + '</td>' +
+    row.cells.map(c => '<td style="background:' + shade(c) + (c !== null && c >= 50 ? ';color:#fff;font-weight:700' : '') + '">' + (c === null ? '' : c + '%') + '</td>').join('') + '</tr>'; });
+  $('retentionTable').innerHTML = h + '</tbody>';
+}
+
+let sortKey = 'logins', sortDir = -1;
+function userList() {
+  const q = $('q').value.trim().toLowerCase(), f = $('fType').value;
+  let u = D.users.filter(x => (!q || (x.name + ' ' + x.email).toLowerCase().includes(q)) &&
+    (f === '' || (f === 'c' && (x.contribute > 0 || x.ds_count > 0)) || (f === 'r' && x.logins > 1) || (f === 's' && x.logins === 1)));
+  u.sort((a, b) => { const x = a[sortKey], y = b[sortKey]; return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * sortDir; });
+  return u;
+}
+function renderPeople() {
+  renderPareto(); renderRetention();
+  const u = userList();
+  $('pcount').textContent = u.length + ' / ' + D.users.length;
+  const cols = [['name', 'User'], ['logins', 'Logins', 1], ['first', 'First'], ['last', 'Last'],
+                ['contribute', 'Contribute', 1], ['ds_count', 'Datasets', 1], ['type', 'Type']];
+  $('userTable').innerHTML = '<thead><tr>' + cols.map(c => '<th class="sortable' + (c[2] ? ' n' : '') + '" data-k="' + c[0] + '">' + c[1] +
+      (sortKey === c[0] ? (sortDir > 0 ? ' \u25B2' : ' \u25BC') : '') + '</th>').join('') + '</tr></thead><tbody>' +
+    (u.length ? u.map(x => '<tr><td>' + (x.name ? '<b>' + esc(x.name) + '</b><br><span style="color:var(--faint)">' + esc(x.email) + '</span>' : esc(x.email)) + '</td><td class="n">' + x.logins +
+      '</td><td>' + esc(x.first) + '</td><td>' + esc(x.last) + '</td><td class="n">' + x.contribute + '</td><td class="n">' + x.ds_count +
+      '</td><td><span class="tag ' + (x.logins > 1 ? 'ret' : '') + '">' + esc(x.type) + '</span></td></tr>').join('')
+      : '<tr><td colspan="7" class="empty">No match.</td></tr>') + '</tbody>';
+  document.querySelectorAll('#userTable th.sortable').forEach(th => th.onclick = () => {
+    const k = th.dataset.k; if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = (k === 'name' || k === 'type') ? 1 : -1; }
+    renderPeople();
+  });
+}
+$('q').oninput = renderPeople; $('fType').onchange = renderPeople;
+$('csvUsers').onclick = () => csv('users.csv',
+  ['Name', 'Email', 'Logins', 'First login', 'Last login', 'Contribute visits', 'Distinct datasets', 'Dataset IDs', 'Type'],
+  userList().map(x => [x.name, x.email, x.logins, x.first, x.last, x.contribute, x.ds_count, x.ds_ids, x.type]));
+
+/* ============ tabs + filters ============ */
+function render() {
+  kill();
+  document.querySelectorAll('.uw').forEach(e => e.textContent = W().one);
+  document.querySelectorAll('.tabpage').forEach(t => t.classList.toggle('on', t.id === 'tab-' + TAB));
+  document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === TAB));
+  if (TAB === 'overview') renderOverview();
+  else if (TAB === 'trends') renderTrends();
+  else if (TAB === 'datasets') renderDatasets();
+  else if (TAB === 'people') renderPeople();
+}
+document.querySelectorAll('#tabs a').forEach(a => a.onclick = () => { TAB = a.dataset.tab; render(); window.scrollTo(0, 0); });
+document.querySelectorAll('#segView button').forEach(b => b.onclick = () => {
+  VIEW = b.dataset.v; document.querySelectorAll('#segView button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+$('selLimit').onchange = function () { LIMIT = +this.value; render(); };
+render();
 </script>
-
 </body>
 </html>
